@@ -27,40 +27,51 @@ type TemplateData struct {
 */
 
 // Repo the repository used by the handlers
-var Repo *Repository
+var Repo *Repository;
 
 // Repository is the repository type
 type Repository struct {
-	App *config.AppConfig
+	App *config.AppConfig;
 }
 
 // NewRepo creates a new repository
-func NewRepo(a *config.AppConfig) *Repository {
+func NewRepo(appConfig *config.AppConfig) *Repository {
 	return &Repository{
-		App: a,
+		App: appConfig,
 	}
 }
 
 // NewHandlers sets the repository for the handlers
-func NewHandlers(r *Repository) {
-	Repo = r
+func NewHandlers(repo *Repository) {
+	Repo = repo;
 }
 
 // Home is the handler for the home page
-func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, "home.page.tmpl", 
+func (m *Repository) Home(writer http.ResponseWriter, request *http.Request) {
+
+	//pulls the remote IP address out of the request
+	remoteIP := request.RemoteAddr;
+	//stores in the request context the remoteIP address with the key "remote_ip"
+	m.App.Session.Put(request.Context(), "remote_ip", remoteIP);
+
+	render.RenderTemplate(writer, "home.page.tmpl", 
 	//the empty curly brackets denotes an empty template as a placeholder
 	&models.TemplateData{})
 }
 
 // About is the handler for the about page
-func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
+func (m *Repository) About(writer http.ResponseWriter, request *http.Request) {
 	// perform some logic
-	stringMap := make(map[string]string)
-	stringMap["test"] = "Hello, again"
+	stringMap := make(map[string]string);
+	stringMap["test"] = "Hello, again";
+
+	//gets the remoteIP for the session from the session cookie
+	remoteIP := m.App.Session.GetString(request.Context(), "remote_ip");
+	//places the ip in the stringmap
+	stringMap["remote_ip"] = remoteIP;
 
 	// send data to the template
-	render.RenderTemplate(w, "about.page.tmpl", &models.TemplateData{
+	render.RenderTemplate(writer, "about.page.tmpl", &models.TemplateData{
 		StringMap: stringMap,
 	})
 }
